@@ -11,7 +11,9 @@ type Props = {
 
 export function CompletionScreen({ score, total, takeaways, onReview, onRestart }: Props) {
   const percent = Math.round((score / total) * 100);
-  const passed = score >= Math.ceil(total * 0.67);
+  // Pass mark is two thirds. Comparing the percentage avoids the rounding trap
+  // where ceil(3 * 0.67) demands a perfect score on a three-question check.
+  const passed = percent >= 67;
 
   return (
     <section aria-labelledby="completion-heading" className="fade-rise">

@@ -4,10 +4,12 @@ type Props = {
   current: number;
   total: number;
   label?: string;
+  /** Spoken description of the position, e.g. "Lesson 3 of 5". */
+  valueText?: string;
   className?: string;
 };
 
-export function ProgressIndicator({ current, total, label, className }: Props) {
+export function ProgressIndicator({ current, total, label, valueText, className }: Props) {
   const percent = Math.round((current / total) * 100);
 
   return (
@@ -18,10 +20,11 @@ export function ProgressIndicator({ current, total, label, className }: Props) {
       </div>
       <div
         role="progressbar"
+        aria-label="Course progress"
         aria-valuemin={0}
         aria-valuemax={total}
         aria-valuenow={current}
-        aria-valuetext={`Lesson ${current} of ${total}, ${percent} percent complete`}
+        aria-valuetext={`${valueText ?? `Step ${current} of ${total}`}, ${percent} percent complete`}
         className="h-1.5 w-full overflow-hidden rounded-full bg-muted"
       >
         <div

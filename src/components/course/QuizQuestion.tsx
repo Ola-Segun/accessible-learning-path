@@ -25,7 +25,10 @@ export function QuizQuestion({
   const groupId = useId();
 
   return (
-    <fieldset className="min-w-0" disabled={submitted}>
+    // Once answered the options stay focusable and announced so keyboard and
+    // screen reader users can still review them — a disabled fieldset would
+    // drop them out of the tab order. Selection changes are ignored instead.
+    <fieldset className="min-w-0" aria-disabled={submitted || undefined}>
       <legend className="mb-5 text-lg font-semibold leading-7 sm:text-xl">
         {meta ? <span className="eyebrow mb-2 block">{meta}</span> : null}
         {legend}
@@ -62,10 +65,20 @@ export function QuizQuestion({
                 name={name}
                 value={choice.id}
                 checked={selected}
-                onChange={() => onSelect(choice.id)}
+                onChange={() => {
+                  if (!submitted) onSelect(choice.id);
+                }}
                 className="mt-1 size-4 shrink-0 accent-[var(--color-primary)] outline-none"
               />
-              <span className="min-w-0 flex-1 text-sm leading-6">{choice.text}</span>
+              <span className="min-w-0 flex-1 text-sm leading-6">
+                {choice.text}
+                {/* The tick/cross is decorative, so the verdict is also given as text. */}
+                {reveal ? (
+                  <span className="sr-only">
+                    {choice.correct ? " — correct answer" : " — your answer, incorrect"}
+                  </span>
+                ) : null}
+              </span>
               {reveal ? (
                 choice.correct ? (
                   <Check aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-success" />

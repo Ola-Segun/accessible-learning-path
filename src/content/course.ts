@@ -41,7 +41,7 @@ export const conceptSection = {
     },
     accessible: {
       label: "Accessible",
-      code: "<button type=\"button\" onclick=\"save()\">Save</button>",
+      code: '<button type="button" onclick="save()">Save</button>',
       note: "A real button is focusable, announced as a button, and works with Enter and Space.",
     },
   },
@@ -74,7 +74,7 @@ export const barriers: Barrier[] = [
     summary: 'alt="image1.png" or no alt at all',
     problem:
       "Screen reader users hear a filename or nothing at all, so any information carried by the image is lost. If the image is a chart or a button, the task becomes impossible.",
-    fix: "Describe the purpose of the image in a short sentence. If the image is purely decorative, use an empty alt=\"\" so it is skipped instead of announced.",
+    fix: 'Describe the purpose of the image in a short sentence. If the image is purely decorative, use an empty alt="" so it is skipped instead of announced.',
     affects: "Screen reader users, people on slow connections",
   },
   {
@@ -118,7 +118,7 @@ export const scenario = {
       text: "Fields have no persistent, programmatically associated labels.",
       correct: true,
       rationale:
-        "Placeholders vanish on typing and are not a reliable accessible name, so screen reader users and anyone reviewing their answers lose the field's purpose. A visible <label for=\"…\"> fixes it.",
+        'Placeholders vanish on typing and are not a reliable accessible name, so screen reader users and anyone reviewing their answers lose the field\'s purpose. A visible <label for="…"> fixes it.',
     },
     {
       id: "c",
@@ -159,7 +159,8 @@ export const quiz: QuizQuestionData[] = [
         id: "b",
         text: "Adding a separate, simplified version of a website for disabled users.",
         correct: false,
-        rationale: "Separate versions fall out of date and exclude people rather than include them.",
+        rationale:
+          "Separate versions fall out of date and exclude people rather than include them.",
       },
       {
         id: "c",

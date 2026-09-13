@@ -49,7 +49,7 @@ const TOTAL_STEPS = lessons.length;
 function CoursePage() {
   const [step, setStep] = useState(0);
   const [complete, setComplete] = useState(false);
-  const [openBarrier, setOpenBarrier] = useState<string | null>(barriers[0].id);
+  const [openBarrier, setOpenBarrier] = useState<string | null>(barriers[0]!.id);
 
   const [scenarioChoice, setScenarioChoice] = useState<string | null>(null);
   const [scenarioSubmitted, setScenarioSubmitted] = useState(false);
@@ -72,16 +72,18 @@ function CoursePage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [step, quizIndex, complete]);
 
-  const currentQuestion = quiz[quizIndex];
+  const currentQuestion = quiz[quizIndex]!;
   const currentChecked = Boolean(quizChecked[currentQuestion.id]);
+  const answeredCount = quiz.filter((q) => quizChecked[q.id]).length;
   const score = quiz.reduce((total, q) => {
     const answer = quizAnswers[q.id];
     const choice = q.choices.find((c) => c.id === answer);
     return total + (choice?.correct ? 1 : 0);
   }, 0);
 
-  const canGoNext =
-    step !== 4 || (currentChecked && (quizIndex < quiz.length - 1 || currentChecked));
+  // An assessment step cannot be skipped: the scenario and each knowledge-check
+  // question must be answered before Next unlocks.
+  const canGoNext = step === 3 ? scenarioSubmitted : step === 4 ? currentChecked : true;
 
   const goNext = useCallback(() => {
     if (step < 4) {
@@ -111,7 +113,7 @@ function CoursePage() {
     setQuizChecked({});
     setScenarioChoice(null);
     setScenarioSubmitted(false);
-    setOpenBarrier(barriers[0].id);
+    setOpenBarrier(barriers[0]!.id);
   };
 
   const review = () => {
@@ -123,7 +125,24 @@ function CoursePage() {
     ? "Course complete"
     : step === 4
       ? `Lesson 5 of ${TOTAL_STEPS} · Question ${quizIndex + 1} of ${quiz.length}`
-      : `Lesson ${step + 1} of ${TOTAL_STEPS} · ${lessons[step].label}`;
+      : `Lesson ${step + 1} of ${TOTAL_STEPS} · ${lessons[step]!.label}`;
+
+  // Progress counts each knowledge-check question as its own unit, so the bar
+  // does not sit at 100% while the learner still has questions to answer.
+  const progressTotal = TOTAL_STEPS - 1 + quiz.length;
+  const progressCurrent = complete
+    ? progressTotal
+    : step === 4
+      ? TOTAL_STEPS - 1 + quizIndex + (currentChecked ? 1 : 0)
+      : step + 1;
+
+  const announcement = complete
+    ? `Course complete. You scored ${score} out of ${quiz.length}.`
+    : step === 4 && currentChecked
+      ? `${currentQuestion.choices.find((c) => c.id === quizAnswers[currentQuestion.id])?.correct ? "Correct." : "Not quite."} ${currentQuestion.explanation}`
+      : step === 3 && scenarioSubmitted
+        ? `${scenario.choices.find((c) => c.id === scenarioChoice)?.correct ? "Correct." : "Not quite."} ${scenario.choices.find((c) => c.correct)!.rationale}`
+        : "";
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
@@ -140,10 +159,17 @@ function CoursePage() {
 
       <CourseHeader
         title={courseMeta.title}
-        current={complete ? TOTAL_STEPS : step + 1}
-        total={TOTAL_STEPS}
+        current={progressCurrent}
+        total={progressTotal}
         stepLabel={stepLabel}
+        valueText={stepLabel}
       />
+
+      {/* Persistent live region: present before the text changes, so feedback
+          and completion are announced rather than silently appearing. */}
+      <div role="status" aria-live="polite" className="sr-only">
+        {announcement}
+      </div>
 
       <main
         id="lesson-content"
@@ -178,9 +204,8 @@ function CoursePage() {
             selected={quizAnswers[currentQuestion.id] ?? null}
             checked={currentChecked}
             score={score}
-            onSelect={(id) =>
-              setQuizAnswers((prev) => ({ ...prev, [currentQuestion.id]: id }))
-            }
+            answered={answeredCount}
+            onSelect={(id) => setQuizAnswers((prev) => ({ ...prev, [currentQuestion.id]: id }))}
             onCheck={() => setQuizChecked((prev) => ({ ...prev, [currentQuestion.id]: true }))}
           />
         )}
@@ -197,7 +222,7 @@ function CoursePage() {
               Previous
             </Button>
             <div className="flex items-center gap-3">
-              {step === 4 && !currentChecked ? (
+              {!canGoNext ? (
                 <p className="hidden text-xs text-muted-foreground sm:block">
                   Check your answer to continue
                 </p>
@@ -427,6 +452,7 @@ function KnowledgeCheckStep({
   selected,
   checked,
   score,
+  answered,
   onSelect,
   onCheck,
 }: {
@@ -434,10 +460,11 @@ function KnowledgeCheckStep({
   selected: string | null;
   checked: boolean;
   score: number;
+  answered: number;
   onSelect: (id: string) => void;
   onCheck: () => void;
 }) {
-  const question = quiz[index];
+  const question = quiz[index]!;
   const chosen = question.choices.find((c) => c.id === selected);
 
   return (
@@ -451,8 +478,10 @@ function KnowledgeCheckStep({
         <p className="text-xs font-medium text-muted-foreground">
           Question {index + 1} of {quiz.length}
         </p>
+        {/* Scored out of questions answered so far, so an unanswered check does
+            not read as a zero the learner has already lost. */}
         <p className="text-xs font-medium tabular-nums text-muted-foreground">
-          Score: {score} / {quiz.length}
+          {answered > 0 ? `Score: ${score} / ${answered}` : "Not yet answered"}
         </p>
       </div>
 

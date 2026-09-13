@@ -19,10 +19,7 @@ export function LessonSection({ eyebrow, title, intro, children, className, anim
       className={cn("fade-rise", className)}
     >
       {eyebrow ? <p className="eyebrow mb-3">{eyebrow}</p> : null}
-      <h2
-        id="lesson-heading"
-        className="text-2xl font-semibold tracking-tight sm:text-3xl"
-      >
+      <h2 id="lesson-heading" className="text-2xl font-semibold tracking-tight sm:text-3xl">
         {title}
       </h2>
       {intro ? (

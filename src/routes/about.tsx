@@ -108,6 +108,21 @@ function AboutPage() {
           behind it — the module is hand-built.
         </p>
 
+        <h2 className="mt-14 text-xl font-semibold tracking-tight">AI-assisted production</h2>
+        <p className="mt-4 max-w-prose text-base leading-7 text-muted-foreground">
+          The outline, first-draft copy and component scaffold were produced with AI assistance from
+          a detailed instructional brief I wrote — audience, objectives, screen-by-screen purpose,
+          assessment strategy and accessibility requirements. Everything generated was then reviewed
+          rather than trusted.
+        </p>
+        <p className="mt-4 max-w-prose text-base leading-7 text-muted-foreground">
+          That review pass caught a pass mark that silently demanded a perfect score, a submitted
+          question that dropped out of the keyboard tab order, a status message that would never
+          have been announced, and feedback icons carrying meaning with no text equivalent. AI
+          compressed the drafting; the accuracy, accessibility and instructional judgement still
+          needed a human who knew what to look for.
+        </p>
+
         <div className="mt-12">
           <Link
             to="/"

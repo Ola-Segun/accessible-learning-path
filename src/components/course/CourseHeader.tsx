@@ -6,9 +6,10 @@ type Props = {
   current: number;
   total: number;
   stepLabel: string;
+  valueText: string;
 };
 
-export function CourseHeader({ title, current, total, stepLabel }: Props) {
+export function CourseHeader({ title, current, total, stepLabel, valueText }: Props) {
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-surface/90 backdrop-blur-sm">
       <div className="mx-auto flex max-w-3xl flex-col gap-3 px-5 py-4 sm:px-8">
@@ -29,7 +30,12 @@ export function CourseHeader({ title, current, total, stepLabel }: Props) {
             About this project
           </Link>
         </div>
-        <ProgressIndicator current={current} total={total} label={stepLabel} />
+        <ProgressIndicator
+          current={current}
+          total={total}
+          label={stepLabel}
+          valueText={valueText}
+        />
       </div>
     </header>
   );

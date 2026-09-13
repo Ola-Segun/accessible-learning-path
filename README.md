@@ -1,83 +1,88 @@
-# Introduction to Web Accessibility
+# Learning Library
 
-**An interactive e-learning module — designing digital experiences everyone can use.**
+**Three short interactive e-learning modules — and the full learner path around them.**
 
-A self-paced 5–7 minute training module for beginners, built end to end: instructional
-design, content writing, interaction design, assessment, and front-end implementation.
+A self-contained learning library built end to end: instructional design, content writing,
+assessment design, interaction design and front-end implementation. Browse a catalogue, read
+a course overview, work through lessons, answer a scored check, and pick up where you left
+off if you leave.
 
 > **Live demo:** _add deployed URL here_
 
 ---
 
-## The brief
+## The courses
 
-Most accessibility training is either a compliance checklist nobody remembers or a
-multi-hour course nobody finishes. The goal here was a short module a working designer
-or developer could complete in one sitting and immediately apply — one concept, four
-concrete barriers, one realistic decision, and a scored check.
+| Course                                 | Category   | For                                               | Length |
+| -------------------------------------- | ---------- | ------------------------------------------------- | ------ |
+| **Reading a Technical Profile**        | Recruiting | New recruiters with no engineering background     | 8 min  |
+| **AI Prompts That Get Useful Answers** | AI Skills  | Professionals using AI at work for the first time | 7 min  |
+| **Introduction to Web Accessibility**  | Design     | Beginners new to accessibility                    | 6 min  |
 
-|                |                                                        |
-| -------------- | ------------------------------------------------------ |
-| **Audience**   | Beginners familiar with websites, new to accessibility |
-| **Duration**   | 5–7 minutes, self-paced                                |
-| **Format**     | Browser-based module, no login, no install             |
-| **Assessment** | 1 scenario + 3 scored multiple-choice questions        |
+Three deliberately unrelated subjects. A module that only works for one topic is a template,
+not an instructional approach.
 
-## Learning objectives
+## The learner path
 
-By the end of the module, learners can:
+```
+/                          Catalogue — filter by category, per-course progress,
+                           resume state on every card
+/course/$slug              Overview — objectives, syllabus, duration, audience,
+                           Start / Resume / Review, reset progress
+/course/$slug/learn        Player — lessons, interactive cards, scenario,
+                           scored check, gated navigation
+/course/$slug/complete     Completion — score, takeaways, and the next
+                           unfinished course in the library
+```
 
-1. Explain what web accessibility means.
-2. Identify common accessibility barriers.
-3. Apply basic accessibility principles when designing digital experiences.
-
-Every screen maps back to one of these three. Nothing was included that did not.
+Progress is written to `localStorage` on every step, so a learner can close the tab mid-quiz
+and return to the same question with their answers intact. There is no account system and
+nothing leaves the browser.
 
 ## Instructional approach
 
-| Screen                    | Purpose                          | Method                                                                  |
-| ------------------------- | -------------------------------- | ----------------------------------------------------------------------- |
-| 1. Welcome                | Set expectations and commitment  | Objectives, duration and audience stated up front                       |
-| 2. What is accessibility? | Build the core concept           | Definition, then a side-by-side `div` vs `button` code comparison       |
-| 3. Common barriers        | Move from concept to recognition | Four expandable cards: problem → fix → who it affects                   |
-| 4. Scenario               | Transfer to a real decision      | Workplace situation with distractor options and rationales for all four |
-| 5. Knowledge check        | Confirm retention                | Three questions, immediate feedback, per-option rationale               |
-| 6. Completion             | Consolidate                      | Score, pass/review messaging, three takeaways                           |
+Every course is built from four lesson types, and the player renders whichever it finds:
+
+| Type       | Purpose                                                                                  |
+| ---------- | ---------------------------------------------------------------------------------------- |
+| `content`  | Build a concept — explanation, a side-by-side comparison, one key takeaway               |
+| `cards`    | Move from concept to recognition — expandable items with problem, fix and who it affects |
+| `scenario` | Transfer to a real decision — a workplace situation with rationales for every option     |
+| `quiz`     | Confirm retention — scored questions with immediate feedback                             |
 
 Design decisions worth naming:
 
-- **Distractors are plausible, not filler.** Each wrong option in the scenario reflects a
-  real critique someone might make (form length, button placement, typeface) — the learner
-  has to reason about which one is an _accessibility_ barrier rather than a usability nit.
-- **Feedback explains every option**, not just the chosen one. Learners who guessed
-  correctly still learn why the others fail.
-- **Assessment gates progression.** The scenario and each question must be answered before
-  Next unlocks, so the module cannot be clicked through passively.
-- **Score is shown out of questions answered so far**, not out of the total, so an
-  unanswered check never reads as points already lost.
+- **Distractors are plausible, not filler.** In _Reading a Technical Profile_, the scenario's
+  wrong answers are all defensible reads of a genuinely ambiguous candidate — the learner has
+  to recognise that "flag and ask" is a legitimate outcome, rather than forcing a yes or no.
+- **Feedback explains every option**, not just the chosen one. Learners who guessed correctly
+  still learn why the others fail.
+- **Assessment gates progression.** Scenarios and quiz questions must be answered before Next
+  unlocks, so a course cannot be clicked through passively.
+- **Score is shown out of questions answered so far**, not out of the total, so an unanswered
+  check never reads as points already lost.
+- **Each course opens by naming its objectives** and every screen maps back to one of them.
 
 ## Accessibility
 
-The module teaches accessibility, so it has to demonstrate it. Implemented and checked:
+One of the modules teaches accessibility, so the library has to demonstrate it throughout:
 
-- Semantic HTML throughout — real `<button>`, `<fieldset>`/`<legend>` for question groups,
-  `<label>` bound to every radio input, one `<h1>` and a clean heading order.
-- Skip link to the lesson content, and focus moved to the lesson container on every step
-  change so keyboard and screen reader users land at the start of new content.
-- Answered questions stay focusable and announced rather than being disabled, so answers
-  can still be reviewed after submission.
-- Correct/incorrect is conveyed as text, not by the tick and cross icons alone — colour
-  and iconography are never the only channel.
-- A persistent `aria-live` region announces feedback and completion. It exists in the DOM
-  before the text changes, which an inline live region would not.
+- Semantic HTML — real `<button>`, `<fieldset>`/`<legend>` for question groups, `<label>`
+  bound to every radio input, one `<h1>` per page and a clean heading order.
+- Skip links, and focus moved to the lesson container on every step change so keyboard and
+  screen reader users land at the start of new content.
+- Answered questions stay focusable and announced rather than being disabled, so answers can
+  still be reviewed after submission.
+- Correct/incorrect is conveyed as text, not by tick and cross icons alone — colour and
+  iconography are never the only channel.
+- A persistent `aria-live` region announces feedback. It exists in the DOM before the text
+  changes, which an inline live region would not.
 - `role="progressbar"` with an accessible name and `aria-valuetext` describing position in
-  words, not just a percentage.
-- Visible focus styles on every interactive element; the default outline is replaced, never
-  removed.
-- Colour contrast verified against WCAG 2.1 AA — body text 6.4:1, muted text on every
-  surface variant ≥ 5.8:1, all interactive and status colours above their thresholds.
-- `prefers-reduced-motion` respected; all animation is suppressed.
-- Responsive from 320px up, tested at mobile, tablet and desktop widths.
+  words; catalogue filters are real toggle buttons with `aria-pressed`.
+- Visible focus styles everywhere; the default outline is replaced, never removed.
+- Colour contrast verified numerically against WCAG 2.1 AA — body text 17:1, muted text
+  ≥ 5.8:1 on every surface variant, all interactive and status colours above threshold.
+- `prefers-reduced-motion` respected; responsive from 320px up.
 
 ## Build
 
@@ -85,50 +90,52 @@ React 19 · TypeScript · TanStack Start (file-based routing, SSR) · Tailwind C
 
 ```
 src/
-  content/course.ts          all course copy, objectives, barriers, scenario, quiz
-  components/course/         CourseHeader · ProgressIndicator · LessonSection
-                             InteractiveCard · QuizQuestion · FeedbackPanel
-                             CompletionScreen
-  routes/index.tsx           course flow and state
-  routes/about.tsx           portfolio information
-  styles.css                 design tokens (oklch), typography, motion
+  content/
+    types.ts                 course + lesson schema
+    index.ts                 catalogue registry
+    courses/*.ts             one file per course — all learner-facing copy
+  components/course/         CourseCard · CourseHeader · ProgressIndicator
+                             LessonSection · LessonViews · InteractiveCard
+                             QuizQuestion · FeedbackPanel · CompletionScreen
+  routes/
+    index.tsx                catalogue
+    course/$slug/            overview · learn · complete
+  lib/progress.ts            localStorage persistence
 ```
 
-**Content is fully separated from presentation.** Every piece of learner-facing copy lives
-in `src/content/course.ts` as typed data. Lessons, barriers and questions can be rewritten,
-reordered or extended without touching a component — the same separation an authoring
-workflow needs when a subject matter expert owns the content and a developer owns the shell.
+**Content is fully separated from presentation.** Adding a course means adding one file to
+`src/content/courses/` and registering it — no component changes. That is the same separation
+a real content workflow needs when a subject matter expert owns the words and a developer
+owns the shell.
 
-State is local React state. There is no backend, no database, no authentication and no
-tracking, because none of that was needed to demonstrate the learning experience.
+State is local React state plus `localStorage`. No backend, no database, no authentication,
+no tracking.
 
 ## AI-assisted production workflow
 
-This module was produced with AI assistance, and that is deliberate — it is how I think
-short-form learning content should be produced at volume.
+Produced with AI assistance, deliberately — it is how I think short-form learning content
+should be made at volume.
 
-- **Structure and scaffolding:** the course outline, screen flow and component scaffold were
-  generated from a detailed instructional brief I wrote specifying audience, objectives,
-  screen-by-screen purpose, assessment strategy, design constraints and accessibility
-  requirements. The quality of the output tracked the specificity of that brief.
-- **Content drafting:** explanations, barrier descriptions, scenario distractors and quiz
-  rationales were AI-drafted against the objectives, then edited for accuracy and tone.
-- **Human review — where the real work was:** generated material was verified rather than
-  trusted. That pass caught a pass-mark calculation that silently required a perfect score,
-  a submitted question that dropped its options out of the keyboard tab order, a live region
+- **Structure and scaffolding** generated from a detailed instructional brief specifying
+  audience, objectives, screen-by-screen purpose, assessment strategy, design constraints and
+  accessibility requirements. Output quality tracked the specificity of that brief.
+- **Content drafting** — explanations, card copy, scenario distractors and quiz rationales
+  drafted against the objectives, then edited for accuracy and tone.
+- **Human review, where the real work was.** Generated material was verified rather than
+  trusted. That pass caught a pass-mark calculation that silently required a perfect score, a
+  submitted question that dropped its options out of the keyboard tab order, a live region
   that would never have announced, a progress bar reading 100% mid-assessment, and feedback
-  icons carrying meaning with no text equivalent. All are fixed in this repository.
-- **Verification:** contrast ratios computed from the design tokens rather than eyeballed;
-  full type check, lint and production build run clean.
+  icons carrying meaning with no text equivalent. All fixed here.
+- **Verification** — contrast computed from the design tokens rather than eyeballed; type
+  check, lint and production build run clean.
 
-The takeaway I'd carry into a content pipeline: AI compresses drafting dramatically, and
-moves the bottleneck to review. Accuracy, accessibility and instructional soundness still
-need a human who knows what to look for.
+AI compresses drafting dramatically and moves the bottleneck to review. Accuracy,
+accessibility and instructional soundness still need a human who knows what to look for.
 
 ## What this is not
 
-No Articulate Storyline, Adobe Captivate, SCORM package or LMS integration. This is a
-hand-built web module. It demonstrates instructional design, content structuring,
+No Articulate Storyline, Adobe Captivate, SCORM package or LMS integration. These are
+hand-built web modules. They demonstrate instructional design, curriculum structure,
 assessment design and accessible front-end implementation — not authoring-tool proficiency.
 
 ## Running locally
@@ -140,8 +147,7 @@ npm install
 npm run dev
 ```
 
-Then open the printed local URL. `npm run build` produces the production bundle;
-`npm run lint` checks formatting and lint rules.
+`npm run build` produces the production bundle; `npm run lint` checks formatting and lint rules.
 
 ---
 

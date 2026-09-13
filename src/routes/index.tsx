@@ -1,519 +1,151 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, Clock, Users, Target, Lightbulb } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { CourseHeader } from "@/components/course/CourseHeader";
-import { LessonSection } from "@/components/course/LessonSection";
-import { InteractiveCard } from "@/components/course/InteractiveCard";
-import { QuizQuestion } from "@/components/course/QuizQuestion";
-import { FeedbackPanel } from "@/components/course/FeedbackPanel";
-import { CompletionScreen } from "@/components/course/CompletionScreen";
-import {
-  barriers,
-  conceptSection,
-  courseMeta,
-  lessons,
-  quiz,
-  scenario,
-  takeaways,
-} from "@/content/course";
+import { CourseCard } from "@/components/course/CourseCard";
+import { catalogue, categories, courses } from "@/content";
+import { useProgressMap } from "@/hooks/use-progress";
+import { statusOf } from "@/lib/progress";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Introduction to Web Accessibility — Interactive Learning Module" },
+      { title: "Learning Library — Short, practical e-learning modules" },
       {
         name: "description",
         content:
-          "A 5–7 minute interactive lesson on web accessibility: what it means, common barriers, a real-world scenario and a scored knowledge check.",
+          "Three self-paced modules on accessibility, technical recruiting and working with AI. Under ten minutes each, with a scored knowledge check.",
       },
-      {
-        property: "og:title",
-        content: "Introduction to Web Accessibility — Interactive Learning Module",
-      },
+      { property: "og:title", content: "Learning Library" },
       {
         property: "og:description",
         content:
-          "A short, accessible e-learning module covering accessibility basics, common barriers and a scored knowledge check.",
+          "Short, practical e-learning modules with interactive assessment and full keyboard and screen-reader support.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: CoursePage,
+  component: CataloguePage,
 });
 
-const TOTAL_STEPS = lessons.length;
+const ALL = "All";
 
-function CoursePage() {
-  const [step, setStep] = useState(0);
-  const [complete, setComplete] = useState(false);
-  const [openBarrier, setOpenBarrier] = useState<string | null>(barriers[0]!.id);
+function CataloguePage() {
+  const { progress, hydrated } = useProgressMap();
+  const [filter, setFilter] = useState<string>(ALL);
 
-  const [scenarioChoice, setScenarioChoice] = useState<string | null>(null);
-  const [scenarioSubmitted, setScenarioSubmitted] = useState(false);
+  const filtered = useMemo(
+    () => (filter === ALL ? courses : courses.filter((c) => c.category === filter)),
+    [filter],
+  );
 
-  const [quizIndex, setQuizIndex] = useState(0);
-  const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({});
-  const [quizChecked, setQuizChecked] = useState<Record<string, boolean>>({});
-
-  const mainRef = useRef<HTMLElement>(null);
-  const firstRender = useRef(true);
-
-  // Move focus to the lesson container on each step change so keyboard and
-  // screen reader users land at the start of the new content.
-  useEffect(() => {
-    if (firstRender.current) {
-      firstRender.current = false;
-      return;
-    }
-    mainRef.current?.focus();
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [step, quizIndex, complete]);
-
-  const currentQuestion = quiz[quizIndex]!;
-  const currentChecked = Boolean(quizChecked[currentQuestion.id]);
-  const answeredCount = quiz.filter((q) => quizChecked[q.id]).length;
-  const score = quiz.reduce((total, q) => {
-    const answer = quizAnswers[q.id];
-    const choice = q.choices.find((c) => c.id === answer);
-    return total + (choice?.correct ? 1 : 0);
-  }, 0);
-
-  // An assessment step cannot be skipped: the scenario and each knowledge-check
-  // question must be answered before Next unlocks.
-  const canGoNext = step === 3 ? scenarioSubmitted : step === 4 ? currentChecked : true;
-
-  const goNext = useCallback(() => {
-    if (step < 4) {
-      setStep((s) => s + 1);
-      return;
-    }
-    if (quizIndex < quiz.length - 1) {
-      setQuizIndex((i) => i + 1);
-      return;
-    }
-    setComplete(true);
-  }, [step, quizIndex]);
-
-  const goPrev = useCallback(() => {
-    if (step === 4 && quizIndex > 0) {
-      setQuizIndex((i) => i - 1);
-      return;
-    }
-    setStep((s) => Math.max(0, s - 1));
-  }, [step, quizIndex]);
-
-  const restart = () => {
-    setComplete(false);
-    setStep(0);
-    setQuizIndex(0);
-    setQuizAnswers({});
-    setQuizChecked({});
-    setScenarioChoice(null);
-    setScenarioSubmitted(false);
-    setOpenBarrier(barriers[0]!.id);
-  };
-
-  const review = () => {
-    setComplete(false);
-    setStep(1);
-  };
-
-  const stepLabel = complete
-    ? "Course complete"
-    : step === 4
-      ? `Lesson 5 of ${TOTAL_STEPS} · Question ${quizIndex + 1} of ${quiz.length}`
-      : `Lesson ${step + 1} of ${TOTAL_STEPS} · ${lessons[step]!.label}`;
-
-  // Progress counts each knowledge-check question as its own unit, so the bar
-  // does not sit at 100% while the learner still has questions to answer.
-  const progressTotal = TOTAL_STEPS - 1 + quiz.length;
-  const progressCurrent = complete
-    ? progressTotal
-    : step === 4
-      ? TOTAL_STEPS - 1 + quizIndex + (currentChecked ? 1 : 0)
-      : step + 1;
-
-  const announcement = complete
-    ? `Course complete. You scored ${score} out of ${quiz.length}.`
-    : step === 4 && currentChecked
-      ? `${currentQuestion.choices.find((c) => c.id === quizAnswers[currentQuestion.id])?.correct ? "Correct." : "Not quite."} ${currentQuestion.explanation}`
-      : step === 3 && scenarioSubmitted
-        ? `${scenario.choices.find((c) => c.id === scenarioChoice)?.correct ? "Correct." : "Not quite."} ${scenario.choices.find((c) => c.correct)!.rationale}`
-        : "";
+  const completed = hydrated
+    ? courses.filter((c) => statusOf(progress[c.slug]) === "completed").length
+    : 0;
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background">
+    <div className="min-h-dvh bg-background">
       <a
-        href="#lesson-content"
+        href="#catalogue"
         className="sr-only rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50"
       >
-        Skip to lesson content
+        Skip to courses
       </a>
 
-      <h1 className="sr-only">
-        {courseMeta.title}: {courseMeta.subtitle}
-      </h1>
+      <header className="border-b border-border bg-surface">
+        <div className="mx-auto flex max-w-4xl items-center justify-between gap-6 px-5 py-4 sm:px-8">
+          <div className="flex items-center gap-3">
+            <span
+              aria-hidden="true"
+              className="grid size-7 shrink-0 place-items-center rounded-md bg-primary font-mono text-[11px] font-semibold text-primary-foreground"
+            >
+              LL
+            </span>
+            <p className="text-sm font-semibold tracking-tight">{catalogue.title}</p>
+          </div>
+          <Link
+            to="/about"
+            className="rounded-md text-xs font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
+          >
+            About this project
+          </Link>
+        </div>
+      </header>
 
-      <CourseHeader
-        title={courseMeta.title}
-        current={progressCurrent}
-        total={progressTotal}
-        stepLabel={stepLabel}
-        valueText={stepLabel}
-      />
+      <main className="mx-auto max-w-4xl px-5 py-14 sm:px-8 sm:py-20">
+        <p className="eyebrow mb-3">Self-paced modules</p>
+        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{catalogue.tagline}</h1>
+        <p className="mt-4 max-w-prose text-base leading-7 text-muted-foreground">
+          {catalogue.description}
+        </p>
 
-      {/* Persistent live region: present before the text changes, so feedback
-          and completion are announced rather than silently appearing. */}
-      <div role="status" aria-live="polite" className="sr-only">
-        {announcement}
-      </div>
+        {hydrated && completed > 0 ? (
+          <p className="mt-6 inline-flex items-center rounded-lg border border-border bg-card px-4 py-2 text-sm text-muted-foreground">
+            You have completed{" "}
+            <span className="mx-1 font-semibold text-foreground">
+              {completed} of {courses.length}
+            </span>{" "}
+            modules.
+          </p>
+        ) : null}
 
-      <main
-        id="lesson-content"
-        ref={mainRef}
-        tabIndex={-1}
-        className="mx-auto w-full max-w-3xl flex-1 px-5 py-12 outline-none sm:px-8 sm:py-16"
-      >
-        {complete ? (
-          <CompletionScreen
-            score={score}
-            total={quiz.length}
-            takeaways={takeaways}
-            onReview={review}
-            onRestart={restart}
-          />
-        ) : step === 0 ? (
-          <WelcomeStep onStart={() => setStep(1)} />
-        ) : step === 1 ? (
-          <ConceptStep />
-        ) : step === 2 ? (
-          <BarriersStep open={openBarrier} setOpen={setOpenBarrier} />
-        ) : step === 3 ? (
-          <ScenarioStep
-            selected={scenarioChoice}
-            submitted={scenarioSubmitted}
-            onSelect={setScenarioChoice}
-            onSubmit={() => setScenarioSubmitted(true)}
-          />
-        ) : (
-          <KnowledgeCheckStep
-            index={quizIndex}
-            selected={quizAnswers[currentQuestion.id] ?? null}
-            checked={currentChecked}
-            score={score}
-            answered={answeredCount}
-            onSelect={(id) => setQuizAnswers((prev) => ({ ...prev, [currentQuestion.id]: id }))}
-            onCheck={() => setQuizChecked((prev) => ({ ...prev, [currentQuestion.id]: true }))}
-          />
-        )}
+        <div className="mt-12">
+          <h2 id="catalogue" className="text-lg font-semibold tracking-tight">
+            Courses
+          </h2>
+
+          <div
+            role="group"
+            aria-label="Filter courses by category"
+            className="mt-4 flex flex-wrap gap-2"
+          >
+            {[ALL, ...categories].map((category) => {
+              const active = filter === category;
+              return (
+                <button
+                  key={category}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => setFilter(category)}
+                  className={cn(
+                    "rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors",
+                    active
+                      ? "border-primary bg-accent text-accent-foreground"
+                      : "border-border bg-card text-muted-foreground hover:border-border-strong hover:text-foreground",
+                  )}
+                >
+                  {category}
+                </button>
+              );
+            })}
+          </div>
+
+          <p aria-live="polite" className="sr-only">
+            {filtered.length} {filtered.length === 1 ? "course" : "courses"} shown
+            {filter === ALL ? "" : ` in ${filter}`}.
+          </p>
+
+          <ul className="mt-6 grid gap-4 sm:grid-cols-2">
+            {filtered.map((course) => (
+              <CourseCard
+                key={course.slug}
+                course={course}
+                lessonCount={course.lessons.length}
+                progress={progress[course.slug]}
+                status={statusOf(progress[course.slug])}
+                showStatus={hydrated}
+              />
+            ))}
+          </ul>
+        </div>
       </main>
 
-      {!complete && step > 0 ? (
-        <nav
-          aria-label="Course navigation"
-          className="sticky bottom-0 border-t border-border bg-surface/90 backdrop-blur-sm"
-        >
-          <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
-            <Button variant="outline" onClick={goPrev}>
-              <ArrowLeft aria-hidden="true" className="size-4" />
-              Previous
-            </Button>
-            <div className="flex items-center gap-3">
-              {!canGoNext ? (
-                <p className="hidden text-xs text-muted-foreground sm:block">
-                  Check your answer to continue
-                </p>
-              ) : null}
-              <Button onClick={goNext} disabled={!canGoNext}>
-                {step === 4 && quizIndex === quiz.length - 1 ? "Finish course" : "Next"}
-                <ArrowRight aria-hidden="true" className="size-4" />
-              </Button>
-            </div>
-          </div>
-        </nav>
-      ) : null}
+      <footer className="border-t border-border">
+        <div className="mx-auto max-w-4xl px-5 py-8 text-xs text-muted-foreground sm:px-8">
+          Progress is stored in this browser only. There is no account and nothing is sent anywhere.
+        </div>
+      </footer>
     </div>
-  );
-}
-
-function WelcomeStep({ onStart }: { onStart: () => void }) {
-  return (
-    <LessonSection
-      animationKey="welcome"
-      eyebrow="Welcome"
-      title={courseMeta.title}
-      intro={courseMeta.intro}
-    >
-      <p className="-mt-4 mb-8 text-lg font-medium text-foreground">{courseMeta.subtitle}</p>
-
-      <dl className="grid gap-3 sm:grid-cols-2">
-        <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
-          <Clock aria-hidden="true" className="size-4 shrink-0 text-primary" />
-          <div>
-            <dt className="eyebrow">Estimated time</dt>
-            <dd className="text-sm font-medium">{courseMeta.duration}</dd>
-          </div>
-        </div>
-        <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
-          <Users aria-hidden="true" className="size-4 shrink-0 text-primary" />
-          <div>
-            <dt className="eyebrow">Who it is for</dt>
-            <dd className="text-sm font-medium">{courseMeta.audience}</dd>
-          </div>
-        </div>
-      </dl>
-
-      <div className="mt-8 rounded-xl border border-border bg-card p-6 shadow-card">
-        <div className="flex items-center gap-2">
-          <Target aria-hidden="true" className="size-4 text-primary" />
-          <h3 className="text-sm font-semibold">Learning objectives</h3>
-        </div>
-        <p className="mt-3 text-sm text-muted-foreground">
-          By the end of this lesson, you will be able to:
-        </p>
-        <ol className="mt-4 space-y-3">
-          {courseMeta.objectives.map((objective, i) => (
-            <li key={objective} className="flex gap-3">
-              <span
-                aria-hidden="true"
-                className="grid size-6 shrink-0 place-items-center rounded-md bg-accent font-mono text-[11px] font-semibold text-accent-foreground"
-              >
-                {i + 1}
-              </span>
-              <span className="text-sm leading-6">{objective}</span>
-            </li>
-          ))}
-        </ol>
-      </div>
-
-      <div className="mt-10">
-        <Button size="lg" onClick={onStart}>
-          Start learning
-          <ArrowRight aria-hidden="true" className="size-4" />
-        </Button>
-      </div>
-    </LessonSection>
-  );
-}
-
-function ConceptStep() {
-  const { heading, body, supporting, example, takeaway } = conceptSection;
-
-  return (
-    <LessonSection animationKey="concept" eyebrow="Lesson 2" title={heading} intro={body}>
-      <p className="max-w-prose text-base leading-7 text-muted-foreground">{supporting}</p>
-
-      <figure className="mt-8">
-        <figcaption className="eyebrow mb-3">{example.caption}</figcaption>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {[example.inaccessible, example.accessible].map((variant, i) => (
-            <div
-              key={variant.label}
-              className={`rounded-xl border p-5 ${
-                i === 0
-                  ? "border-destructive/30 bg-destructive-surface"
-                  : "border-success/30 bg-success-surface"
-              }`}
-            >
-              <p
-                className={`text-xs font-semibold uppercase tracking-wide ${
-                  i === 0 ? "text-destructive" : "text-success"
-                }`}
-              >
-                {variant.label}
-              </p>
-              <pre className="mt-3 overflow-x-auto rounded-md bg-card p-3 font-mono text-xs leading-5">
-                <code>{variant.code}</code>
-              </pre>
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">{variant.note}</p>
-            </div>
-          ))}
-        </div>
-      </figure>
-
-      <div className="mt-8 rounded-xl border border-border bg-card p-5 shadow-card">
-        <div className="flex gap-3">
-          <Lightbulb aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-primary" />
-          <div>
-            <p className="text-sm font-semibold">Key takeaway</p>
-            <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{takeaway}</p>
-          </div>
-        </div>
-      </div>
-    </LessonSection>
-  );
-}
-
-function BarriersStep({
-  open,
-  setOpen,
-}: {
-  open: string | null;
-  setOpen: (id: string | null) => void;
-}) {
-  return (
-    <LessonSection
-      animationKey="barriers"
-      eyebrow="Lesson 3"
-      title="Common accessibility barriers"
-      intro="Most accessibility problems come from a small number of recurring habits. Select each barrier to see why it excludes people and how to fix it."
-    >
-      <div className="space-y-3">
-        {barriers.map((barrier, i) => (
-          <InteractiveCard
-            key={barrier.id}
-            index={i + 1}
-            title={barrier.title}
-            summary={barrier.summary}
-            problem={barrier.problem}
-            fix={barrier.fix}
-            affects={barrier.affects}
-            open={open === barrier.id}
-            onToggle={() => setOpen(open === barrier.id ? null : barrier.id)}
-          />
-        ))}
-      </div>
-    </LessonSection>
-  );
-}
-
-function ScenarioStep({
-  selected,
-  submitted,
-  onSelect,
-  onSubmit,
-}: {
-  selected: string | null;
-  submitted: boolean;
-  onSelect: (id: string) => void;
-  onSubmit: () => void;
-}) {
-  const chosen = scenario.choices.find((c) => c.id === selected);
-  const correct = scenario.choices.find((c) => c.correct)!;
-
-  return (
-    <LessonSection
-      animationKey="scenario"
-      eyebrow="Lesson 4"
-      title={scenario.heading}
-      intro={scenario.situation}
-    >
-      <div className="rounded-xl border border-border bg-card p-6 shadow-card">
-        <QuizQuestion
-          name="scenario"
-          legend={scenario.question}
-          choices={[...scenario.choices]}
-          selectedId={selected}
-          submitted={submitted}
-          onSelect={onSelect}
-        />
-
-        {!submitted ? (
-          <div className="mt-6">
-            <Button onClick={onSubmit} disabled={!selected}>
-              Check answer
-            </Button>
-          </div>
-        ) : null}
-      </div>
-
-      {submitted && chosen ? (
-        <div className="mt-6 space-y-4">
-          <FeedbackPanel
-            status={chosen.correct ? "correct" : "incorrect"}
-            title={chosen.correct ? "Correct" : "Not quite"}
-          >
-            <p>{correct.rationale}</p>
-            {!chosen.correct ? <p>Your answer: {chosen.rationale}</p> : null}
-          </FeedbackPanel>
-
-          <FeedbackPanel status="info" title="Why the other options are less appropriate">
-            <ul className="space-y-2">
-              {scenario.choices
-                .filter((c) => !c.correct)
-                .map((c) => (
-                  <li key={c.id}>
-                    <span className="font-medium text-foreground">{c.text}</span> {c.rationale}
-                  </li>
-                ))}
-            </ul>
-          </FeedbackPanel>
-        </div>
-      ) : null}
-    </LessonSection>
-  );
-}
-
-function KnowledgeCheckStep({
-  index,
-  selected,
-  checked,
-  score,
-  answered,
-  onSelect,
-  onCheck,
-}: {
-  index: number;
-  selected: string | null;
-  checked: boolean;
-  score: number;
-  answered: number;
-  onSelect: (id: string) => void;
-  onCheck: () => void;
-}) {
-  const question = quiz[index]!;
-  const chosen = question.choices.find((c) => c.id === selected);
-
-  return (
-    <LessonSection
-      animationKey={`check-${question.id}`}
-      eyebrow="Lesson 5"
-      title="Knowledge check"
-      intro="Three short questions to confirm the essentials. You will see feedback after each answer."
-    >
-      <div className="mb-4 flex items-center justify-between gap-4">
-        <p className="text-xs font-medium text-muted-foreground">
-          Question {index + 1} of {quiz.length}
-        </p>
-        {/* Scored out of questions answered so far, so an unanswered check does
-            not read as a zero the learner has already lost. */}
-        <p className="text-xs font-medium tabular-nums text-muted-foreground">
-          {answered > 0 ? `Score: ${score} / ${answered}` : "Not yet answered"}
-        </p>
-      </div>
-
-      <div className="rounded-xl border border-border bg-card p-6 shadow-card">
-        <QuizQuestion
-          name={question.id}
-          legend={question.prompt}
-          choices={question.choices}
-          selectedId={selected}
-          submitted={checked}
-          onSelect={onSelect}
-        />
-
-        {!checked ? (
-          <div className="mt-6">
-            <Button onClick={onCheck} disabled={!selected}>
-              Check answer
-            </Button>
-          </div>
-        ) : null}
-      </div>
-
-      {checked && chosen ? (
-        <FeedbackPanel
-          className="mt-6"
-          status={chosen.correct ? "correct" : "incorrect"}
-          title={chosen.correct ? "Correct" : "Not quite"}
-        >
-          <p>{chosen.rationale}</p>
-          <p>{question.explanation}</p>
-        </FeedbackPanel>
-      ) : null}
-    </LessonSection>
   );
 }

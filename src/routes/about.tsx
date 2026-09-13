@@ -1,20 +1,21 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
+import { courses } from "@/content";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
-      { title: "About this project — Web Accessibility Learning Module" },
+      { title: "About this project — Learning Library" },
       {
         name: "description",
         content:
-          "Portfolio information for an interactive e-learning module on web accessibility: role, purpose, and the skills it demonstrates.",
+          "Portfolio information for a multi-course e-learning demo: role, purpose, instructional approach and the skills it demonstrates.",
       },
-      { property: "og:title", content: "About this project — Web Accessibility Learning Module" },
+      { property: "og:title", content: "About this project — Learning Library" },
       {
         property: "og:description",
         content:
-          "Portfolio information for an interactive e-learning module on web accessibility: role, purpose, and the skills it demonstrates.",
+          "Portfolio information for a multi-course e-learning demo: role, purpose and the skills it demonstrates.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -24,36 +25,36 @@ export const Route = createFileRoute("/about")({
 });
 
 const facts = [
-  { label: "Project", value: "Introduction to Web Accessibility" },
+  { label: "Project", value: "Learning Library — three interactive e-learning modules" },
   { label: "Role", value: "E-Learning Developer / Instructional Designer" },
   { label: "Purpose", value: "Demonstration of interactive digital learning development" },
-  { label: "Format", value: "Self-paced web module, approximately 5–7 minutes" },
+  { label: "Format", value: "Self-paced web modules, 6–8 minutes each" },
 ];
 
 const demonstrates = [
   {
     title: "Instructional design",
-    body: "Clear objectives, a short logical flow, and content chunked so a beginner can finish in one sitting.",
+    body: "Each module states its objectives up front, and every screen maps back to one of them. Nothing is included because it was interesting.",
+  },
+  {
+    title: "Curriculum structure",
+    body: "Three courses across three subjects sharing one content schema, so lessons can be written or reordered without touching a component.",
   },
   {
     title: "Interactive learning",
-    body: "Expandable barrier examples and a realistic workplace scenario instead of passive reading.",
+    body: "Expandable concept cards and realistic workplace scenarios instead of passive reading.",
   },
   {
     title: "Knowledge assessment",
-    body: "Three multiple-choice questions with immediate feedback, rationales for every option, and scoring.",
+    body: "Scored checks with immediate feedback, a written rationale for every option, and assessment steps that gate progression.",
   },
   {
     title: "Accessibility",
-    body: "Semantic structure, keyboard operation, visible focus states, sufficient contrast and reduced-motion support.",
+    body: "Semantic structure, keyboard operation, visible focus states, verified contrast and reduced-motion support across every screen.",
   },
   {
-    title: "Responsive UI development",
-    body: "A single layout that reads comfortably on mobile, tablet and desktop.",
-  },
-  {
-    title: "User-centred design",
-    body: "Persistent progress, predictable navigation, and no step where the learner can lose their place.",
+    title: "Learner experience",
+    body: "A full path from browsing the catalogue to completion, with progress saved so a learner can resume where they left off.",
   },
 ];
 
@@ -67,7 +68,7 @@ function AboutPage() {
             className="inline-flex items-center gap-2 rounded-md text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft aria-hidden="true" className="size-4" />
-            Back to the course
+            Learning Library
           </Link>
         </div>
       </header>
@@ -76,8 +77,9 @@ function AboutPage() {
         <p className="eyebrow mb-3">Portfolio information</p>
         <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">About this project</h1>
         <p className="mt-4 max-w-prose text-base leading-7 text-muted-foreground">
-          A compact, self-contained e-learning module built to show how I plan, write and build
-          digital learning experiences end to end.
+          A small, self-contained learning library built to show how I plan, write and build digital
+          learning experiences end to end — from course discovery through to a scored completion
+          screen.
         </p>
 
         <dl className="mt-10 divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
@@ -88,6 +90,20 @@ function AboutPage() {
             </div>
           ))}
         </dl>
+
+        <h2 className="mt-14 text-xl font-semibold tracking-tight">The courses</h2>
+        <p className="mt-4 max-w-prose text-base leading-7 text-muted-foreground">
+          Three deliberately different subjects, to show the approach is not tied to one topic.
+        </p>
+        <ul className="mt-6 space-y-3">
+          {courses.map((course) => (
+            <li key={course.slug} className="rounded-xl border border-border bg-card p-5">
+              <p className="eyebrow">{course.category}</p>
+              <h3 className="mt-1.5 text-sm font-semibold">{course.title}</h3>
+              <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{course.summary}</p>
+            </li>
+          ))}
+        </ul>
 
         <h2 className="mt-14 text-xl font-semibold tracking-tight">What this demonstrates</h2>
         <ul className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -101,11 +117,16 @@ function AboutPage() {
 
         <h2 className="mt-14 text-xl font-semibold tracking-tight">How it was built</h2>
         <p className="mt-4 max-w-prose text-base leading-7 text-muted-foreground">
-          React and TypeScript with Tailwind CSS, using reusable components for the course header,
-          progress indicator, lesson sections, interactive cards, quiz questions and feedback
-          panels. Course content is stored separately from the interface so lessons can be edited or
-          extended without touching the components. There is no authoring tool, SCORM package or LMS
-          behind it — the module is hand-built.
+          React and TypeScript with Tailwind CSS. Every course is data rather than markup: a shared
+          schema describes four lesson types — explanation, interactive cards, scenario and
+          assessment — and the player renders whatever it finds. Adding a course means adding one
+          file and no components, which is the same separation a real content workflow needs when a
+          subject matter expert owns the words and a developer owns the shell.
+        </p>
+        <p className="mt-4 max-w-prose text-base leading-7 text-muted-foreground">
+          Progress is saved to the browser so a learner can leave and resume. There is no account
+          system, no backend and no tracking — and no authoring tool, SCORM package or LMS behind
+          it. The modules are hand-built.
         </p>
 
         <h2 className="mt-14 text-xl font-semibold tracking-tight">AI-assisted production</h2>
@@ -128,7 +149,7 @@ function AboutPage() {
             to="/"
             className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
           >
-            Take the course
+            Browse the courses
           </Link>
         </div>
       </main>

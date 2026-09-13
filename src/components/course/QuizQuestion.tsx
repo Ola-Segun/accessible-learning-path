@@ -1,7 +1,7 @@
 import { Check, X } from "lucide-react";
 import { useId } from "react";
 import { cn } from "@/lib/utils";
-import type { Choice } from "@/content/course";
+import type { Choice } from "@/content";
 
 type Props = {
   name: string;

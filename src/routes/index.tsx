@@ -78,7 +78,7 @@ function CataloguePage() {
               to="/about"
               className="rounded-md text-xs font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
             >
-              About this project
+              About
             </Link>
           </nav>
         </div>

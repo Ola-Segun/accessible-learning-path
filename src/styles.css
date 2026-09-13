@@ -160,6 +160,13 @@
     outline-offset: 2px;
     border-radius: var(--radius-sm);
   }
+
+  /* Modal backdrop. Written here rather than as a `backdrop:` utility because
+     that variant compiles to nothing in this setup. */
+  dialog::backdrop {
+    background-color: color-mix(in oklab, var(--color-foreground) 45%, transparent);
+    backdrop-filter: blur(2px);
+  }
 }
 
 @utility eyebrow {

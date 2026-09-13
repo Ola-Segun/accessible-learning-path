@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Download, FileDown, Trash2, UserRound } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Modal } from "@/components/ui/modal";
 import { LearnerForm } from "@/components/course/LearnerForm";
 import { courses, hasPassed, scorableCount } from "@/content";
 import { useLearner } from "@/hooks/use-learner";
@@ -149,38 +150,33 @@ function RecordPage() {
           </p>
         ) : null}
 
-        {hydrated && !learner && !editing ? (
-          <section className="mt-10 rounded-xl border border-border bg-card p-6 shadow-card">
-            <div className="flex items-center gap-2">
-              <UserRound aria-hidden="true" className="size-4 text-primary" />
-              <h2 className="text-sm font-semibold">Add your details</h2>
-            </div>
-            <p className="mt-3 max-w-prose text-sm leading-6 text-muted-foreground">
+        {hydrated && !learner ? (
+          <div className="mt-6 flex flex-wrap items-center gap-4 rounded-xl border border-border bg-card p-5">
+            <UserRound aria-hidden="true" className="size-4 shrink-0 text-primary" />
+            <p className="min-w-0 flex-1 text-sm leading-6 text-muted-foreground">
               Your completions are already being recorded. Add a name and email so certificates can
               be issued against them.
             </p>
-            <div className="mt-6">
-              <LearnerForm submitLabel="Save details" onSubmit={save} />
-            </div>
-          </section>
+            <Button onClick={() => setEditing(true)}>Add your details</Button>
+          </div>
         ) : null}
 
-        {hydrated && learner && editing ? (
-          <section className="mt-10 rounded-xl border border-border bg-card p-6 shadow-card">
-            <h2 className="text-sm font-semibold">Update your details</h2>
-            <div className="mt-6">
-              <LearnerForm
-                initial={learner}
-                submitLabel="Save details"
-                onSubmit={(next) => {
-                  save(next);
-                  setEditing(false);
-                }}
-                onCancel={() => setEditing(false)}
-              />
-            </div>
-          </section>
-        ) : null}
+        <Modal
+          open={editing}
+          onClose={() => setEditing(false)}
+          title={learner ? "Your details" : "Add your details"}
+          description="These appear on your certificates and training record."
+        >
+          <LearnerForm
+            initial={learner}
+            submitLabel="Save details"
+            onSubmit={(next) => {
+              save(next);
+              setEditing(false);
+            }}
+            onCancel={() => setEditing(false)}
+          />
+        </Modal>
 
         <dl className="mt-10 grid gap-3 sm:grid-cols-3">
           <div className="rounded-xl border border-border bg-card p-5">

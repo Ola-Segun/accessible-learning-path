@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ArrowLeft, ArrowRight, Clock, RotateCcw, Target, UserRound, Users } from "lucide-react";
 
 import { LearnerForm } from "@/components/course/LearnerForm";
+import { Modal } from "@/components/ui/modal";
 import { getCourse, passMarkOf, scorableCount } from "@/content";
 import { useLearner } from "@/hooks/use-learner";
 import { useProgressMap } from "@/hooks/use-progress";
@@ -40,7 +41,8 @@ function CourseDetailPage() {
   const navigate = useNavigate();
   const { progress, hydrated, refresh } = useProgressMap();
   const { learner, hydrated: learnerHydrated, save } = useLearner();
-  const [enrolling, setEnrolling] = useState(false);
+  /** null = closed. "enrol" continues into the course, "edit" stays put. */
+  const [dialog, setDialog] = useState<"enrol" | "edit" | null>(null);
 
   const saved = progress[course.slug];
   const status = statusOf(saved);
@@ -158,85 +160,89 @@ function CourseDetailPage() {
           </p>
         </section>
 
-        {/* Enrolment. Identity is captured once, before the first course, so the
-            completion record and certificate have a name on them. */}
-        {learnerHydrated && (!learner || enrolling) ? (
-          <section
-            aria-labelledby="enrol"
-            className="mt-10 rounded-xl border border-border bg-card p-6 shadow-card"
+        <div className="mt-10 flex flex-wrap items-center gap-3">
+          {/*
+            A real link, so it works before hydration and without JavaScript.
+            When there is no identity yet the click is intercepted and the
+            enrolment dialog opens instead of sending the learner down the page.
+          */}
+          <Link
+            to="/course/$slug/learn"
+            params={{ slug: course.slug }}
+            onClick={(event) => {
+              if (learnerHydrated && !learner) {
+                event.preventDefault();
+                setDialog("enrol");
+              }
+            }}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
           >
-            <div className="flex items-center gap-2">
-              <UserRound aria-hidden="true" className="size-4 text-primary" />
-              <h2 id="enrol" className="text-sm font-semibold">
-                {enrolling ? "Update your details" : "Before you start"}
-              </h2>
-            </div>
-            <p className="mt-3 max-w-prose text-sm leading-6 text-muted-foreground">
-              {enrolling
-                ? "These details appear on your certificates and training record."
-                : "Your name and email are recorded against your completion so your certificate and training record can be issued."}
-            </p>
-            <div className="mt-6">
-              <LearnerForm
-                initial={learner}
-                submitLabel={enrolling ? "Save details" : "Enrol and start"}
-                onSubmit={(next) => {
-                  save(next);
-                  if (enrolling) setEnrolling(false);
-                  else toPlayer();
-                }}
-                {...(enrolling ? { onCancel: () => setEnrolling(false) } : {})}
-              />
-            </div>
-          </section>
-        ) : null}
+            {cta}
+            <ArrowRight aria-hidden="true" className="size-4" />
+          </Link>
 
-        {!learnerHydrated || learner ? (
-          <div className="mt-10 flex flex-wrap items-center gap-3">
-            <Link
-              to="/course/$slug/learn"
-              params={{ slug: course.slug }}
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
-            >
-              {cta}
-              <ArrowRight aria-hidden="true" className="size-4" />
-            </Link>
-
-            {hydrated && status !== "not-started" ? (
-              <button
-                type="button"
-                onClick={() => {
-                  clearCourse(course.slug);
-                  refresh();
-                }}
-                className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-border-strong hover:text-foreground"
-              >
-                <RotateCcw aria-hidden="true" className="size-4" />
-                Reset progress
-              </button>
-            ) : null}
-          </div>
-        ) : null}
-
-        {learnerHydrated && learner && !enrolling ? (
-          <p className="mt-4 text-sm text-muted-foreground">
-            Enrolled as <span className="font-medium text-foreground">{learner.name}</span>
-            {learner.department ? ` · ${learner.department}` : ""}.{" "}
+          {hydrated && status !== "not-started" ? (
             <button
               type="button"
-              onClick={() => setEnrolling(true)}
-              className="rounded-md font-medium text-primary underline-offset-4 hover:underline"
+              onClick={() => {
+                clearCourse(course.slug);
+                refresh();
+              }}
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-border-strong hover:text-foreground"
             >
-              Change details
+              <RotateCcw aria-hidden="true" className="size-4" />
+              Reset progress
             </button>
-          </p>
-        ) : null}
+          ) : null}
+        </div>
+
+        <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+          <UserRound aria-hidden="true" className="size-4 shrink-0" />
+          {learnerHydrated && learner ? (
+            <span>
+              Enrolled as <span className="font-medium text-foreground">{learner.name}</span>
+              {learner.department ? ` · ${learner.department}` : ""}.{" "}
+              <button
+                type="button"
+                onClick={() => setDialog("edit")}
+                className="rounded-md font-medium text-primary underline-offset-4 hover:underline"
+              >
+                Change details
+              </button>
+            </span>
+          ) : (
+            <span>Takes about {course.duration}. You will be asked for your name first.</span>
+          )}
+        </p>
 
         {hydrated && status === "completed" && saved ? (
           <p className="mt-2 text-sm text-muted-foreground">
             You completed this module and scored {saved.score} of {saved.total}.
           </p>
         ) : null}
+
+        <Modal
+          open={dialog !== null}
+          onClose={() => setDialog(null)}
+          title={dialog === "edit" ? "Your details" : "Before you start"}
+          description={
+            dialog === "edit"
+              ? "These appear on your certificates and training record."
+              : "Recorded against your completion so your certificate and training record can be issued."
+          }
+        >
+          <LearnerForm
+            initial={learner}
+            submitLabel={dialog === "edit" ? "Save details" : "Enrol and start"}
+            onSubmit={(next) => {
+              save(next);
+              const wasEnrolling = dialog === "enrol";
+              setDialog(null);
+              if (wasEnrolling) toPlayer();
+            }}
+            onCancel={() => setDialog(null)}
+          />
+        </Modal>
       </main>
     </div>
   );

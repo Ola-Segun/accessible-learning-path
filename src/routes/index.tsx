@@ -3,7 +3,9 @@ import { useMemo, useState } from "react";
 
 import { CourseCard } from "@/components/course/CourseCard";
 import { catalogue, categories, courses } from "@/content";
+import { useLearner } from "@/hooks/use-learner";
 import { useProgressMap } from "@/hooks/use-progress";
+import { firstName } from "@/lib/learner";
 import { statusOf } from "@/lib/progress";
 import { cn } from "@/lib/utils";
 
@@ -33,6 +35,7 @@ const ALL = "All";
 
 function CataloguePage() {
   const { progress, hydrated } = useProgressMap();
+  const { learner } = useLearner();
   const [filter, setFilter] = useState<string>(ALL);
 
   const filtered = useMemo(
@@ -64,29 +67,52 @@ function CataloguePage() {
             </span>
             <p className="text-sm font-semibold tracking-tight">{catalogue.title}</p>
           </div>
-          <Link
-            to="/about"
-            className="rounded-md text-xs font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
-          >
-            About this project
-          </Link>
+          <nav aria-label="Primary" className="flex items-center gap-5">
+            <Link
+              to="/record"
+              className="rounded-md text-xs font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
+            >
+              Training record
+            </Link>
+            <Link
+              to="/about"
+              className="rounded-md text-xs font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
+            >
+              About this project
+            </Link>
+          </nav>
         </div>
       </header>
 
+      {/* Says plainly what this build is. The same application behaves as an
+          internal system when identity comes from SSO instead of a form. */}
+      <p className="border-b border-border bg-accent px-5 py-2.5 text-center text-xs text-accent-foreground sm:px-8">
+        Public demonstration build — records and certificates stay in your browser. In an internal
+        deployment these are issued by the L&amp;D system.
+      </p>
+
       <main className="mx-auto max-w-4xl px-5 py-14 sm:px-8 sm:py-20">
         <p className="eyebrow mb-3">Self-paced modules</p>
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{catalogue.tagline}</h1>
+        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+          {learner ? `Welcome back, ${firstName(learner)}.` : catalogue.tagline}
+        </h1>
         <p className="mt-4 max-w-prose text-base leading-7 text-muted-foreground">
           {catalogue.description}
         </p>
 
         {hydrated && completed > 0 ? (
-          <p className="mt-6 inline-flex items-center rounded-lg border border-border bg-card px-4 py-2 text-sm text-muted-foreground">
-            You have completed{" "}
-            <span className="mx-1 font-semibold text-foreground">
+          <p className="mt-6 inline-flex flex-wrap items-center gap-1 rounded-lg border border-border bg-card px-4 py-2 text-sm text-muted-foreground">
+            You have completed
+            <span className="font-semibold text-foreground">
               {completed} of {courses.length}
-            </span>{" "}
-            modules.
+            </span>
+            modules ·
+            <Link
+              to="/record"
+              className="rounded-md font-medium text-primary underline-offset-4 hover:underline"
+            >
+              view your training record
+            </Link>
           </p>
         ) : null}
 

@@ -23,10 +23,15 @@ export function CourseCard({ course, status, progress, lessonCount, showStatus }
 
   return (
     <li className="group relative flex flex-col rounded-xl border border-border bg-card p-6 transition-colors hover:border-border-strong">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <span className="rounded-md bg-secondary px-2 py-1 text-[11px] font-medium text-secondary-foreground">
           {course.category}
         </span>
+        {course.required ? (
+          <span className="rounded-md bg-accent px-2 py-1 text-[11px] font-medium text-accent-foreground">
+            Required
+          </span>
+        ) : null}
         <span className="eyebrow">{course.level}</span>
       </div>
 

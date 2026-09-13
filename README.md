@@ -26,18 +26,56 @@ not an instructional approach.
 
 ```
 /                          Catalogue — filter by category, per-course progress,
-                           resume state on every card
-/course/$slug              Overview — objectives, syllabus, duration, audience,
-                           Start / Resume / Review, reset progress
-/course/$slug/learn        Player — lessons, interactive cards, scenario,
-                           scored check, gated navigation
-/course/$slug/complete     Completion — score, takeaways, and the next
-                           unfinished course in the library
+                           required-training badge, resume state
+/course/$slug              Overview — objectives, syllabus, pass mark, enrolment
+/course/$slug/learn        Player — lessons, scenario, scored check,
+                           gated navigation, time on task
+/course/$slug/complete     Result — pass/fail against the mark, downloadable
+                           certificate, retake, next course
+/record                    Training record — completions, scores, time spent,
+                           certificate re-issue, CSV export
 ```
 
 Progress is written to `localStorage` on every step, so a learner can close the tab mid-quiz
-and return to the same question with their answers intact. There is no account system and
-nothing leaves the browser.
+and return to the same question with their answers intact.
+
+## Built as an internal system with a public build in front of it
+
+The learning experience is identical in both. What changes is where identity and records
+come from — and saying so plainly is what keeps the demo honest.
+
+| Capability         | Internal deployment                       | This public build                 |
+| ------------------ | ----------------------------------------- | --------------------------------- |
+| Learner identity   | SSO and the HR directory                  | Entered once, kept in the browser |
+| Assigned training  | Driven by role and department             | Marked on the course              |
+| Completion records | Written to the L&D record system          | Stored in the browser             |
+| Certificates       | Issued and verifiable against the record  | Generated locally as a PNG        |
+| Reporting          | Manager dashboards and compliance exports | CSV export of your own record     |
+
+Nothing entered is transmitted. There is no account and no server; the learner can delete
+their details from the training record at any time.
+
+## The record layer
+
+What separates a training platform from a set of lessons is the administration around them:
+
+- **Enrolment** — name, email and optional department captured once, before the first course,
+  so a completion has someone's name on it.
+- **Pass marks** — every course carries one (67% by default). Below it the result screen says
+  so and offers a retake that clears previous answers for a clean run.
+- **Certificates** — issued on a pass, with a deterministic ID (`LL-2026-4A9C31`) derived from
+  learner, course and completion date, so the same completion always produces the same
+  reference. Painted directly to a canvas with the 2D API rather than screenshotting the DOM:
+  no extra dependency, no cross-origin tainting, identical output in every browser, and
+  downloadable as a PNG at 2x.
+- **Training record** — completions, scores, pass/fail, attempts, time on task and certificate
+  re-issue, plus a CSV export. In an internal deployment that export is what a manager pulls
+  for compliance reporting.
+- **Required training** — courses can be flagged as assigned rather than optional, and the
+  record counts what is outstanding.
+
+The certificate canvas is `aria-hidden`, because a screen reader cannot read pixels. Every
+value painted on it is repeated as real text beside it.
 
 ## Instructional approach
 
@@ -91,16 +129,21 @@ React 19 · TypeScript · TanStack Start (file-based routing, SSR) · Tailwind C
 ```
 src/
   content/
-    types.ts                 course + lesson schema
+    types.ts                 course + lesson schema, pass-mark rules
     index.ts                 catalogue registry
     courses/*.ts             one file per course — all learner-facing copy
   components/course/         CourseCard · CourseHeader · ProgressIndicator
                              LessonSection · LessonViews · InteractiveCard
-                             QuizQuestion · FeedbackPanel · CompletionScreen
+                             QuizQuestion · FeedbackPanel · LearnerForm
+                             Certificate
   routes/
     index.tsx                catalogue
     course/$slug/            overview · learn · complete
-  lib/progress.ts            localStorage persistence
+    record.tsx               training record
+  lib/
+    progress.ts              completion records
+    learner.ts               identity + certificate IDs
+    certificate.ts           canvas rendering and PNG download
 ```
 
 **Content is fully separated from presentation.** Adding a course means adding one file to

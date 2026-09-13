@@ -1,7 +1,10 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, Clock, RotateCcw, Target, Users } from "lucide-react";
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { ArrowLeft, ArrowRight, Clock, RotateCcw, Target, UserRound, Users } from "lucide-react";
 
-import { getCourse, scorableCount } from "@/content";
+import { LearnerForm } from "@/components/course/LearnerForm";
+import { getCourse, passMarkOf, scorableCount } from "@/content";
+import { useLearner } from "@/hooks/use-learner";
 import { useProgressMap } from "@/hooks/use-progress";
 import { clearCourse, statusOf } from "@/lib/progress";
 
@@ -34,7 +37,10 @@ const KIND_LABEL: Record<string, string> = {
 
 function CourseDetailPage() {
   const { course } = Route.useLoaderData();
+  const navigate = useNavigate();
   const { progress, hydrated, refresh } = useProgressMap();
+  const { learner, hydrated: learnerHydrated, save } = useLearner();
+  const [enrolling, setEnrolling] = useState(false);
 
   const saved = progress[course.slug];
   const status = statusOf(saved);
@@ -46,6 +52,9 @@ function CourseDetailPage() {
       : status === "in-progress"
         ? "Resume course"
         : "Start course";
+
+  const toPlayer = () =>
+    void navigate({ to: "/course/$slug/learn", params: { slug: course.slug } });
 
   return (
     <div className="min-h-dvh bg-background">
@@ -62,10 +71,15 @@ function CourseDetailPage() {
       </header>
 
       <main className="mx-auto max-w-3xl px-5 py-14 sm:px-8">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="rounded-md bg-secondary px-2 py-1 text-[11px] font-medium text-secondary-foreground">
             {course.category}
           </span>
+          {course.required ? (
+            <span className="rounded-md bg-accent px-2 py-1 text-[11px] font-medium text-accent-foreground">
+              Required training
+            </span>
+          ) : null}
           <span className="eyebrow">{course.level}</span>
         </div>
 
@@ -139,37 +153,87 @@ function CourseDetailPage() {
             ))}
           </ol>
           <p className="mt-3 text-xs text-muted-foreground">
-            {course.lessons.length} lessons · {scorable} scored questions
+            {course.lessons.length} lessons · {scorable} scored questions · {passMarkOf(course)}% to
+            pass
           </p>
         </section>
 
-        <div className="mt-10 flex flex-wrap items-center gap-3">
-          <Link
-            to="/course/$slug/learn"
-            params={{ slug: course.slug }}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+        {/* Enrolment. Identity is captured once, before the first course, so the
+            completion record and certificate have a name on them. */}
+        {learnerHydrated && (!learner || enrolling) ? (
+          <section
+            aria-labelledby="enrol"
+            className="mt-10 rounded-xl border border-border bg-card p-6 shadow-card"
           >
-            {cta}
-            <ArrowRight aria-hidden="true" className="size-4" />
-          </Link>
+            <div className="flex items-center gap-2">
+              <UserRound aria-hidden="true" className="size-4 text-primary" />
+              <h2 id="enrol" className="text-sm font-semibold">
+                {enrolling ? "Update your details" : "Before you start"}
+              </h2>
+            </div>
+            <p className="mt-3 max-w-prose text-sm leading-6 text-muted-foreground">
+              {enrolling
+                ? "These details appear on your certificates and training record."
+                : "Your name and email are recorded against your completion so your certificate and training record can be issued."}
+            </p>
+            <div className="mt-6">
+              <LearnerForm
+                initial={learner}
+                submitLabel={enrolling ? "Save details" : "Enrol and start"}
+                onSubmit={(next) => {
+                  save(next);
+                  if (enrolling) setEnrolling(false);
+                  else toPlayer();
+                }}
+                {...(enrolling ? { onCancel: () => setEnrolling(false) } : {})}
+              />
+            </div>
+          </section>
+        ) : null}
 
-          {hydrated && status !== "not-started" ? (
+        {!learnerHydrated || learner ? (
+          <div className="mt-10 flex flex-wrap items-center gap-3">
+            <Link
+              to="/course/$slug/learn"
+              params={{ slug: course.slug }}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+            >
+              {cta}
+              <ArrowRight aria-hidden="true" className="size-4" />
+            </Link>
+
+            {hydrated && status !== "not-started" ? (
+              <button
+                type="button"
+                onClick={() => {
+                  clearCourse(course.slug);
+                  refresh();
+                }}
+                className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-border-strong hover:text-foreground"
+              >
+                <RotateCcw aria-hidden="true" className="size-4" />
+                Reset progress
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+
+        {learnerHydrated && learner && !enrolling ? (
+          <p className="mt-4 text-sm text-muted-foreground">
+            Enrolled as <span className="font-medium text-foreground">{learner.name}</span>
+            {learner.department ? ` · ${learner.department}` : ""}.{" "}
             <button
               type="button"
-              onClick={() => {
-                clearCourse(course.slug);
-                refresh();
-              }}
-              className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-border-strong hover:text-foreground"
+              onClick={() => setEnrolling(true)}
+              className="rounded-md font-medium text-primary underline-offset-4 hover:underline"
             >
-              <RotateCcw aria-hidden="true" className="size-4" />
-              Reset progress
+              Change details
             </button>
-          ) : null}
-        </div>
+          </p>
+        ) : null}
 
         {hydrated && status === "completed" && saved ? (
-          <p className="mt-4 text-sm text-muted-foreground">
+          <p className="mt-2 text-sm text-muted-foreground">
             You completed this module and scored {saved.score} of {saved.total}.
           </p>
         ) : null}

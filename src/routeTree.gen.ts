@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
+import { Route as RecordRouteImport } from './routes/record'
 import { Route as CourseSlugIndexRouteImport } from './routes/course/$slug/index'
 import { Route as CourseSlugCompleteRouteImport } from './routes/course/$slug/complete'
 import { Route as CourseSlugLearnRouteImport } from './routes/course/$slug/learn'
@@ -23,6 +24,11 @@ const IndexRoute = IndexRouteImport.update({
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecordRoute = RecordRouteImport.update({
+  id: '/record',
+  path: '/record',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CourseSlugIndexRoute = CourseSlugIndexRouteImport.update({
@@ -44,6 +50,7 @@ const CourseSlugLearnRoute = CourseSlugLearnRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/record': typeof RecordRoute
   '/course/$slug/complete': typeof CourseSlugCompleteRoute
   '/course/$slug/learn': typeof CourseSlugLearnRoute
   '/course/$slug/': typeof CourseSlugIndexRoute
@@ -51,6 +58,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/record': typeof RecordRoute
   '/course/$slug/complete': typeof CourseSlugCompleteRoute
   '/course/$slug/learn': typeof CourseSlugLearnRoute
   '/course/$slug': typeof CourseSlugIndexRoute
@@ -59,6 +67,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/record': typeof RecordRoute
   '/course/$slug/complete': typeof CourseSlugCompleteRoute
   '/course/$slug/learn': typeof CourseSlugLearnRoute
   '/course/$slug/': typeof CourseSlugIndexRoute
@@ -68,6 +77,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
+    | '/record'
     | '/course/$slug/complete'
     | '/course/$slug/learn'
     | '/course/$slug/'
@@ -75,6 +85,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/record'
     | '/course/$slug/complete'
     | '/course/$slug/learn'
     | '/course/$slug'
@@ -82,6 +93,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/about'
+    | '/record'
     | '/course/$slug/complete'
     | '/course/$slug/learn'
     | '/course/$slug/'
@@ -90,6 +102,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  RecordRoute: typeof RecordRoute
   CourseSlugCompleteRoute: typeof CourseSlugCompleteRoute
   CourseSlugLearnRoute: typeof CourseSlugLearnRoute
   CourseSlugIndexRoute: typeof CourseSlugIndexRoute
@@ -109,6 +122,13 @@ declare module '@tanstack/react-router' {
       path: '/about'
       fullPath: '/about'
       preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/record': {
+      id: '/record'
+      path: '/record'
+      fullPath: '/record'
+      preLoaderRoute: typeof RecordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/course/$slug/': {
@@ -138,6 +158,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  RecordRoute: RecordRoute,
   CourseSlugCompleteRoute: CourseSlugCompleteRoute,
   CourseSlugLearnRoute: CourseSlugLearnRoute,
   CourseSlugIndexRoute: CourseSlugIndexRoute,

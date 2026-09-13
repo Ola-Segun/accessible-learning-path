@@ -129,6 +129,69 @@ function AboutPage() {
           it. The modules are hand-built.
         </p>
 
+        <h2 className="mt-14 text-xl font-semibold tracking-tight">
+          Public build, internal system
+        </h2>
+        <p className="mt-4 max-w-prose text-base leading-7 text-muted-foreground">
+          This is designed as an internal training platform with a public demonstration build in
+          front of it. The learning experience is identical in both; what changes is where identity
+          and records come from.
+        </p>
+        <div className="mt-6 overflow-x-auto rounded-xl border border-border">
+          <table className="w-full min-w-[36rem] border-collapse bg-card text-sm">
+            <caption className="sr-only">
+              How each capability differs between the internal deployment and this public build.
+            </caption>
+            <thead>
+              <tr className="border-b border-border text-left">
+                <th scope="col" className="p-4 font-medium">
+                  Capability
+                </th>
+                <th scope="col" className="p-4 font-medium">
+                  Internal deployment
+                </th>
+                <th scope="col" className="p-4 font-medium">
+                  This public build
+                </th>
+              </tr>
+            </thead>
+            <tbody className="text-muted-foreground">
+              {[
+                [
+                  "Learner identity",
+                  "SSO and the HR directory",
+                  "Entered once, kept in the browser",
+                ],
+                ["Assigned training", "Driven by role and department", "Marked on the course"],
+                ["Completion records", "Written to the L&D record system", "Stored in the browser"],
+                [
+                  "Certificates",
+                  "Issued and verifiable against the record",
+                  "Generated locally as a PNG",
+                ],
+                [
+                  "Reporting",
+                  "Manager dashboards and compliance exports",
+                  "CSV export of your own record",
+                ],
+              ].map(([capability, internal, demo]) => (
+                <tr key={capability} className="border-b border-border last:border-0">
+                  <th scope="row" className="p-4 text-left font-medium text-foreground">
+                    {capability}
+                  </th>
+                  <td className="p-4">{internal}</td>
+                  <td className="p-4">{demo}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-4 max-w-prose text-base leading-7 text-muted-foreground">
+          Nothing you enter here is transmitted. There is no account and no server holding your
+          details — you can remove them from your training record at any time and they are gone
+          immediately.
+        </p>
+
         <h2 className="mt-14 text-xl font-semibold tracking-tight">AI-assisted production</h2>
         <p className="mt-4 max-w-prose text-base leading-7 text-muted-foreground">
           The outline, first-draft copy and component scaffold were produced with AI assistance from

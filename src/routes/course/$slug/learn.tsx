@@ -10,8 +10,14 @@ import {
   QuizLesson,
   ScenarioLesson,
 } from "@/components/course/LessonViews";
-import { getCourse, scorableCount, type Course } from "@/content";
-import { emptyProgress, loadAll, questionKey, saveCourse } from "@/lib/progress";
+import { getCourse, hasPassed, scorableCount, type Course } from "@/content";
+import {
+  emptyProgress,
+  loadAll,
+  questionKey,
+  saveCourse,
+  type CourseProgress,
+} from "@/lib/progress";
 
 export const Route = createFileRoute("/course/$slug/learn")({
   loader: ({ params }) => {
@@ -66,11 +72,18 @@ function PlayerPage() {
 
   const mainRef = useRef<HTMLElement>(null);
   const firstRender = useRef(true);
+  /** Baseline for time-on-course, carried over from previous sittings. */
+  const baseSeconds = useRef(0);
+  const sittingStart = useRef(Date.now());
+  const priorRecord = useRef<CourseProgress | null>(null);
 
   // Restore after mount. Server and first client render both start at lesson 0
   // so the markup matches; returning learners jump to their saved position.
   useEffect(() => {
     const saved = loadAll()[course.slug];
+    priorRecord.current = saved ?? null;
+    baseSeconds.current = saved?.secondsSpent ?? 0;
+    sittingStart.current = Date.now();
     if (saved && !saved.completed) {
       setLessonIndex(Math.min(saved.lessonIndex, course.lessons.length - 1));
       setQuizIndex(saved.quizIndex);
@@ -83,6 +96,12 @@ function PlayerPage() {
     }
     setHydrated(true);
   }, [course.slug, course.lessons.length]);
+
+  /** Total time on this course, including the sitting in progress. */
+  const elapsedSeconds = useCallback(
+    () => baseSeconds.current + Math.round((Date.now() - sittingStart.current) / 1000),
+    [],
+  );
 
   const lesson = course.lessons[lessonIndex]!;
 
@@ -102,20 +121,24 @@ function PlayerPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [lessonIndex, quizIndex]);
 
-  // Persist on every change, once the saved state has been read.
+  // Persist on every change, once the saved state has been read. A completed
+  // record keeps its completion — reviewing a course does not un-complete it.
   useEffect(() => {
     if (!hydrated) return;
+    const prior = priorRecord.current;
     saveCourse(course.slug, {
       ...emptyProgress(),
+      ...prior,
       lessonIndex,
       quizIndex,
       answers,
       checked,
-      completed: false,
       score: computeScore(course, answers, checked),
       total: scorableCount(course),
+      secondsSpent: elapsedSeconds(),
+      startedAt: prior?.startedAt ?? new Date().toISOString(),
     });
-  }, [hydrated, course, lessonIndex, quizIndex, answers, checked]);
+  }, [hydrated, course, lessonIndex, quizIndex, answers, checked, elapsedSeconds]);
 
   const activeKey =
     lesson.kind === "scenario"
@@ -156,18 +179,28 @@ function PlayerPage() {
       return;
     }
     const score = computeScore(course, answers, checked);
+    const total = scorableCount(course);
+    const prior = priorRecord.current;
+    const now = new Date().toISOString();
     saveCourse(course.slug, {
       ...emptyProgress(),
+      ...prior,
       lessonIndex: course.lessons.length - 1,
       quizIndex,
       answers,
       checked,
       completed: true,
+      passed: hasPassed(course, score, total),
       score,
-      total: scorableCount(course),
+      total,
+      secondsSpent: elapsedSeconds(),
+      // First completion sets the date; a retake keeps the original.
+      completedAt: prior?.completedAt ?? now,
+      attempts: (prior?.attempts ?? 0) + 1,
+      startedAt: prior?.startedAt ?? now,
     });
     void navigate({ to: "/course/$slug/complete", params: { slug: course.slug } });
-  }, [lesson, quizIndex, isLastLesson, course, answers, checked, navigate]);
+  }, [lesson, quizIndex, isLastLesson, course, answers, checked, navigate, elapsedSeconds]);
 
   const goPrev = useCallback(() => {
     if (lesson.kind === "quiz" && quizIndex > 0) {

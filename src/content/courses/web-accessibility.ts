@@ -8,6 +8,8 @@ export const webAccessibility: Course = {
   level: "Beginner",
   duration: "6 min",
   audience: "Beginners with basic familiarity with websites",
+  // Accessibility awareness is commonly mandated rather than optional.
+  required: true,
   summary:
     "What accessibility means, the four barriers that cause most problems, and how to spot them in your own work.",
   intro:

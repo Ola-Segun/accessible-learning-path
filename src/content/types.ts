@@ -85,6 +85,13 @@ export type Course = {
   level: "Beginner" | "Intermediate";
   duration: string;
   audience: string;
+  /**
+   * Assigned training rather than optional. In an internal deployment this is
+   * driven by role and department; here it is set on the course.
+   */
+  required?: boolean;
+  /** Percentage needed to pass. Defaults to 67. */
+  passMark?: number;
   /** One line for the catalogue card. */
   summary: string;
   /** Opening paragraph on the course detail page. */
@@ -101,4 +108,19 @@ export function scorableCount(course: Course): number {
     if (lesson.kind === "scenario") return total + 1;
     return total;
   }, 0);
+}
+
+export const DEFAULT_PASS_MARK = 67;
+
+export function passMarkOf(course: Course): number {
+  return course.passMark ?? DEFAULT_PASS_MARK;
+}
+
+/**
+ * Compares the percentage rather than a rounded question count — `ceil(n * 0.67)`
+ * demands a perfect score on a three-question check.
+ */
+export function hasPassed(course: Course, score: number, total: number): boolean {
+  if (total === 0) return true;
+  return Math.round((score / total) * 100) >= passMarkOf(course);
 }
